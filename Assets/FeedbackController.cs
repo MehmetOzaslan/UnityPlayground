@@ -21,15 +21,25 @@ public class FeedbackController : MonoBehaviour
     public float e = 0;
     public float ePrev = 0;
 
+    public OvershootCalculator overshoot;
+
     public bool isInitialized()
     {
         return inputSensor != null && outputActuator != null;
+    }
+
+    private void Awake()
+    {
+        overshoot = new OvershootCalculator(inputSensor);
     }
 
     void FixedUpdate()
     {
         if (!isInitialized())
             return;
+
+        //Determine any overshoot.
+        overshoot.Tick();
 
         //Timestep approximations
         float dt = Time.fixedDeltaTime;
@@ -48,6 +58,37 @@ public class FeedbackController : MonoBehaviour
 
         ePrev = e;
     }
+}
+
+public class OvershootCalculator{
+    public Sensor sensor;
+
+    public float overshoot = 0;
+    public float oldTarget = 0;
+    public int direction = 0;
+
+    public OvershootCalculator(Sensor sensor)
+    {
+        this.sensor = sensor;
+    }
+
+    public void Tick() {
+
+        float error = sensor.getCurrent() - sensor.getTarget();
+
+        //Setting the direction when the target changes and resetting the overshoot
+        if (sensor.getTarget() != oldTarget) {
+            oldTarget = sensor.getTarget();
+            direction = (int)Mathf.Sign(error);
+            overshoot = 0;
+        }
+
+        //Once the object crosses over the target.
+        if ((int)Mathf.Sign(error) == -direction ) {
+            overshoot = Mathf.Max( Mathf.Abs(overshoot), Mathf.Abs(error));
+        }
+    }
+
 }
 
 
@@ -75,7 +116,7 @@ public class ControllerEditor : Editor
         string label = "Not Initialized";
         if (t.isInitialized())
         {
-            label = "e:" + t.e + " t:" + t.inputSensor.getTarget() + " u:" + t.u;
+            label = "e:" + t.e + "\nt:" + t.inputSensor.getTarget() + "\nu:" + t.u + "\nMp:" + t.overshoot.overshoot;
         }
         Handles.Label(pos, label);
     }
