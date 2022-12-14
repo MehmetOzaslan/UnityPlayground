@@ -34,7 +34,7 @@ public class Movement1D : MonoBehaviour
 }
 
 [CustomEditor(typeof(Movement1D))]
-public class ExampleEditor : Editor
+public class Movement1DEditor : Editor
 {
     // Custom in-scene UI for when ExampleScript
     // component is selected.
