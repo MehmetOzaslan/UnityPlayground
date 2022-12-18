@@ -9,11 +9,11 @@ public class FeedbackController : MonoBehaviour
     public Actuator outputActuator;
 
     [SerializeField]
-    public float kp = 5;
+    public float kp = 3;
     [SerializeField]
-    public float ki = 5;
+    public float ki = 0;
     [SerializeField]
-    public float kd = 4;
+    public float kd = 3;
 
     public float u = 0;
     float iErr = 0;
@@ -23,6 +23,9 @@ public class FeedbackController : MonoBehaviour
 
     public OvershootCalculator overshoot;
 
+    public void SetAcuator(Actuator actuator) { this.outputActuator = actuator; }
+    public void SetSensor(Sensor sensor) { this.inputSensor = sensor; }
+
     public bool isInitialized()
     {
         return inputSensor != null && outputActuator != null;
@@ -30,7 +33,7 @@ public class FeedbackController : MonoBehaviour
 
     private void Awake()
     {
-        overshoot = new OvershootCalculator(inputSensor);
+        overshoot = new OvershootCalculator();
     }
 
     void FixedUpdate()
@@ -39,7 +42,7 @@ public class FeedbackController : MonoBehaviour
             return;
 
         //Determine any overshoot.
-        overshoot.Tick();
+        overshoot.Tick(inputSensor);
 
         //Timestep approximations
         float dt = Time.fixedDeltaTime;
@@ -61,18 +64,13 @@ public class FeedbackController : MonoBehaviour
 }
 
 public class OvershootCalculator{
-    public Sensor sensor;
 
     public float overshoot = 0;
     public float oldTarget = 0;
     public int direction = 0;
 
-    public OvershootCalculator(Sensor sensor)
-    {
-        this.sensor = sensor;
-    }
 
-    public void Tick() {
+    public void Tick(Sensor sensor) {
 
         float error = sensor.getCurrent() - sensor.getTarget();
 
